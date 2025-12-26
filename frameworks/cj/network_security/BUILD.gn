@@ -1,0 +1,76 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//foundation/communication/netstack/netstack_config.gni")
+
+ohos_shared_library("cj_net_network_security_ffi") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  branch_protector_ret = "pac_ret"
+
+  include_dirs = [
+    "include",
+    "$NETSTACK_DIR/utils/common_utils/include",
+  ]
+  sources = [
+    "src/net_network_security_ffi.cpp",
+  ]
+
+  defines = []
+
+  cflags = [
+    "-fstack-protector-strong",
+    "-D_FORTIFY_SOURCE=2",
+    "-O2",
+  ]
+
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fstack-protector-strong",
+    "-D_FORTIFY_SOURCE=2",
+    "-O2",
+  ]
+
+  deps = [ "$NETSTACK_DIR/interfaces/innerkits/net_ssl:net_ssl" ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "napi:ace_napi",
+    "napi:cj_bind_ffi",
+    "napi:cj_bind_native",
+    "openssl:libcrypto_shared",
+    "openssl:libssl_shared",
+    "samgr:samgr_proxy",
+  ]
+
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.communication_netmanager_base) &&
+      global_parts_info.communication_netmanager_base) {
+    external_deps += [
+      "netmanager_base:net_conn_manager_if",
+      "netmanager_base:net_security_config_if",
+    ]
+    defines += [ "HAS_NETMANAGER_BASE=1" ]
+  } else {
+    defines += [ "HAS_NETMANAGER_BASE=0" ]
+  }
+
+  innerapi_tags = [ "platformsdk" ]
+  part_name = "netstack"
+  subsystem_name = "communication"
+}

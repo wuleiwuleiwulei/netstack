@@ -1,0 +1,154 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//foundation/communication/netstack/netstack_config.gni")
+
+config("http_ffi_config") {
+  include_dirs = [
+    "include",
+    "$NETSTACK_DIR/utils/common_utils/include",
+  ]
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.communication_netmanager_base) &&
+      global_parts_info.communication_netmanager_base) {
+    include_dirs += [ "$NETSTACK_DIR/utils/http_over_curl/include" ]
+  }
+  defines = []
+
+  cflags_cc = [ "-fvisibility=hidden" ]
+
+  if (is_mingw || is_mac) {
+    cflags = [
+      "-std=c++17",
+      "-stdlib=libc++",
+    ]
+  }
+  if (is_mingw) {
+    defines += [ "WINDOWS_PLATFORM" ]
+  } else if (is_mac) {
+    defines += [ "MAC_PLATFORM" ]
+    cflags_cc = [
+      "-fstack-protector-strong",
+      "-D_FORTIFY_SOURCE=2",
+      "-O2",
+    ]
+  } else if (!build_ohos_sdk) {
+    defines += [
+      "HTTP_PROXY_ENABLE",
+      "HTTP_MULTIPATH_CERT_ENABLE",
+      "HTTP_ONLY_VERIFY_ROOT_CA_ENABLE",
+    ]
+    cflags_cc += [
+      "-fstack-protector-strong",
+      "-D_FORTIFY_SOURCE=2",
+      "-O2",
+    ]
+  }
+
+  if (current_os == "ohos") {
+    defines += [ "OHOS_PLATFORM" ]
+  }
+}
+
+ohos_shared_library("cj_net_http_ffi") {
+  if (!build_ohos_sdk) {
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
+  }
+
+  branch_protector_ret = "pac_ret"
+
+  sources = [
+    "src/lru_cache_disk_handler.cpp",
+    "src/net_http_cache_entity.cpp",
+    "src/net_http_cache_proxy.cpp",
+    "src/net_http_cache_strategy.cpp",
+    "src/net_http_client_exec.cpp",
+    "src/net_http_ffi.cpp",
+    "src/net_http_request.cpp",
+    "src/net_http_request_context.cpp",
+    "src/net_http_response.cpp",
+    "src/net_http_utils.cpp",
+  ]
+
+  configs = [ ":http_ffi_config" ]
+
+  if (is_mingw || is_mac){
+    sources += [
+      "$NETSTACK_DIR/utils/common_utils/src/netstack_common_utils.cpp",
+    ]
+    deps = [ "$NETSTACK_DIR/utils/napi_utils:napi_utils_static" ]
+    external_deps = [
+      "bounds_checking_function:libsec_shared",
+      "cJSON:cjson",
+      "curl:curl_shared",
+      "jsoncpp:jsoncpp_static",
+      "napi:ace_napi",
+      "napi:cj_bind_ffi",
+      "napi:cj_bind_native",
+    ]
+    ldflags = [ "-lpthread" ]
+  } else{
+    external_deps = [
+      "cJSON:cjson",
+      "c_utils:utils",
+      "curl:curl_shared",
+      "hilog:libhilog",
+      "hitrace:hitrace_meter",
+      "napi:cj_bind_ffi",
+      "napi:cj_bind_native",
+      "openssl:libcrypto_shared",
+      "openssl:libssl_shared",
+      "samgr:samgr_proxy",
+    ]
+
+    if (build_ohos_sdk) {
+      defines += [ "PREVIEWER" ]
+      sources = [ "src/net_http_mock.cpp" ]
+    } else {
+      external_deps += [ "init:libbegetutil" ]
+    }
+
+    deps = [ "$NETSTACK_DIR/utils:stack_utils_common" ]
+
+    if (defined(global_parts_info) &&
+        defined(global_parts_info.communication_netmanager_base) &&
+        global_parts_info.communication_netmanager_base) {
+      external_deps += [
+        "netmanager_base:net_conn_manager_if",
+        "netmanager_base:net_security_config_if",
+      ]
+      defines = [ "HAS_NETMANAGER_BASE=1" ]
+      sources += [
+        "$NETSTACK_DIR/utils/http_over_curl/src/epoll_multi_driver.cpp",
+        "$NETSTACK_DIR/utils/http_over_curl/src/epoll_request_handler.cpp",
+      ]
+    } else {
+      defines = [ "HAS_NETMANAGER_BASE=0" ]
+    }
+  }
+
+  cflags = [
+    "-fstack-protector-strong",
+    "-D_FORTIFY_SOURCE=2",
+    "-O2",
+  ]
+
+  innerapi_tags = [ "platformsdk" ]
+  part_name = "netstack"
+  subsystem_name = "communication"
+}
