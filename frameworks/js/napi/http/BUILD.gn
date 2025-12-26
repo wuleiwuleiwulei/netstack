@@ -1,0 +1,215 @@
+# Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//foundation/communication/netstack/netstack_config.gni")
+
+config("http_config") {
+  include_dirs = [
+    "async_context/include",
+    "async_work/include",
+    "cache/base64/include",
+    "cache/cache_constant/include",
+    "cache/cache_proxy/include",
+    "cache/cache_strategy/include",
+    "cache/lru_cache/include",
+    "constant/include",
+    "http_exec/include",
+    "http_module/include",
+    "options/include",
+    "$NETSTACK_DIR/utils/common_utils/include",
+  ]
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.communication_netmanager_base) &&
+      global_parts_info.communication_netmanager_base) {
+    include_dirs += [
+      "$NETSTACK_DIR/utils/http_over_curl/include",
+      "$NETSTACK_DIR/utils/netstack_chr_client/include",
+    ]
+  }
+  defines = []
+
+  if (is_mingw || is_mac) {
+    cflags = [
+      "-std=c++17",
+      "-stdlib=libc++",
+    ]
+  }
+  if (is_mingw) {
+    defines += [ "WINDOWS_PLATFORM" ]
+  } else if (is_mac) {
+    defines += [ "MAC_PLATFORM" ]
+    cflags_cc = [
+      "-fstack-protector-strong",
+      "-D_FORTIFY_SOURCE=2",
+      "-O2",
+    ]
+  } else if (product_name != "ohos-sdk") {
+    defines += [ "HTTP_PROXY_ENABLE" ]
+    cflags_cc = [
+      "-fstack-protector-strong",
+      "-D_FORTIFY_SOURCE=2",
+      "-O2",
+    ]
+  }
+
+  if (product_name != "ohos-sdk") {
+    defines += [
+      "HTTP_MULTIPATH_CERT_ENABLE",
+      "HTTP_ONLY_VERIFY_ROOT_CA_ENABLE",
+    ]
+  }
+
+  if (netstack_http_boringssl) {
+    defines += [ "HTTP_CACHE_FILE_PATH_USE_BASE" ]
+  }
+}
+
+ohos_shared_library("http") {
+  if (product_name != "ohos-sdk") {
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
+  }
+
+  branch_protector_ret = "pac_ret"
+
+  include_dirs = []
+
+  sources = [
+    "$NETSTACK_DIR/utils/profiler_utils/src/http_network_message.cpp",
+    "$NETSTACK_DIR/utils/profiler_utils/src/i_network_message.cpp",
+    "$NETSTACK_DIR/utils/profiler_utils/src/netstack_network_profiler.cpp",
+    "$NETSTACK_DIR/utils/tlv_utils/src/tlv_utils.cpp",
+    "async_context/src/request_context.cpp",
+    "async_work/src/http_async_work.cpp",
+    "cache/base64/src/base64_utils.cpp",
+    "cache/cache_proxy/src/cache_proxy.cpp",
+    "cache/cache_strategy/src/http_cache_request.cpp",
+    "cache/cache_strategy/src/http_cache_response.cpp",
+    "cache/cache_strategy/src/http_cache_strategy.cpp",
+    "cache/cache_strategy/src/http_time.cpp",
+    "cache/lru_cache/src/disk_handler.cpp",
+    "cache/lru_cache/src/lru_cache.cpp",
+    "cache/lru_cache/src/lru_cache_disk_handler.cpp",
+    "constant/src/constant.cpp",
+    "http_exec/src/http_exec.cpp",
+    "http_exec/src/http_tls_config.cpp",
+    "http_exec/src/http_utils.cpp",
+    "http_module/src/http_module.cpp",
+    "options/src/http_request_options.cpp",
+    "options/src/http_response.cpp",
+  ]
+
+  configs = [ ":http_config" ]
+
+  if (is_mingw || is_mac) {
+    sources += [
+      "$NETSTACK_DIR/utils/common_utils/src/netstack_common_utils.cpp",
+      "$NETSTACK_DIR/utils/common_utils/src/request_tracer.cpp",
+    ]
+    deps = [ "$NETSTACK_DIR/utils/napi_utils:napi_utils_static" ]
+    external_deps = [
+      "bounds_checking_function:libsec_shared",
+      "cJSON:cjson",
+      "curl:curl_shared",
+      "jsoncpp:jsoncpp_static",
+      "napi:ace_napi",
+    ]
+    ldflags = [ "-lpthread" ]
+  } else {
+    deps = [
+      "$NETSTACK_DIR/utils:stack_utils_common",
+      "$NETSTACK_DIR/utils/napi_utils:napi_utils",
+    ]
+    external_deps = [
+      "ability_base:configuration",
+      "ability_runtime:wantagent_innerkits",
+      "cJSON:cjson",
+      "curl:curl_shared_http3",
+      "hilog:libhilog",
+      "hiprofiler:libnetwork_profiler",
+      "hitrace:hitrace_meter",
+      "ipc:ipc_single",
+      "napi:ace_napi",
+      "samgr:samgr_proxy",
+      "time_service:time_client",
+    ]
+
+    external_deps += [
+      "openssl:libcrypto_shared",
+      "openssl:libssl_shared",
+    ]
+
+    if (defined(global_parts_info) &&
+        defined(global_parts_info.communication_netmanager_base) &&
+        global_parts_info.communication_netmanager_base) {
+      external_deps += [
+        "bundle_framework:appexecfwk_base",
+        "bundle_framework:appexecfwk_core",
+        "netmanager_base:net_conn_manager_if",
+        "netmanager_base:net_security_config_if",
+        "netmanager_base:netsys_client",
+        "safwk:system_ability_fwk",
+        "samgr:samgr_proxy",
+      ]
+      defines = [
+        "HAS_NETMANAGER_BASE=1",
+        "HAS_NETSTACK_CHR=1",
+        "ENABLE_HTTP_INTERCEPT=1",
+      ]
+      sources += [
+        "$NETSTACK_DIR/utils/http_over_curl/src/epoll_multi_driver.cpp",
+        "$NETSTACK_DIR/utils/http_over_curl/src/epoll_request_handler.cpp",
+        "$NETSTACK_DIR/utils/http_over_curl/src/http_handover_handler.cpp",
+        "$NETSTACK_DIR/utils/netstack_chr_client/src/netstack_chr_client.cpp",
+        "$NETSTACK_DIR/utils/netstack_chr_client/src/netstack_chr_report.cpp",
+        "http_interceptor/src/http_interceptor.cpp",
+      ]
+      defines += [
+        "HTTP_HANDOVER_FEATURE",
+        "HTTP_STACK_NAME=\"http\"",
+      ]
+      include_dirs += [
+        "$NETSTACK_DIR/interfaces/innerkits/http_client/include",
+        "http_interceptor/include",
+      ]
+    } else {
+      defines = [
+        "HAS_NETMANAGER_BASE=0",
+        "HAS_NETSTACK_CHR=0",
+      ]
+    }
+    if (product_name != "ohos-sdk") {
+      external_deps += [ "init:libbegetutil" ]
+    }
+  }
+  if (!build_ohos_sdk) {
+    external_deps += [ "hiappevent:hiappevent_innerapi" ]
+  }
+  include_dirs += [
+    "$NETSTACK_DIR/utils/profiler_utils/include",
+    "$NETSTACK_DIR/utils/tlv_utils/include",
+  ]
+  cflags = [
+    "-fstack-protector-strong",
+    "-D_FORTIFY_SOURCE=2",
+    "-O2",
+  ]
+
+  relative_install_dir = "module/net"
+  part_name = "netstack"
+  subsystem_name = "communication"
+}
