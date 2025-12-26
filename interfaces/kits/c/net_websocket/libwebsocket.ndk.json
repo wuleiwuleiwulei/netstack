@@ -1,0 +1,8 @@
+[
+    {"name": "OH_WebSocketClient_Constructor"},
+    {"name": "OH_WebSocketClient_AddHeader"},
+    {"name": "OH_WebSocketClient_Connect"},
+    {"name": "OH_WebSocketClient_Send"},
+    {"name": "OH_WebSocketClient_Close"},
+    {"name": "OH_WebSocketClient_Destroy"}
+]

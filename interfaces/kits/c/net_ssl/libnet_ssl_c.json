@@ -1,0 +1,30 @@
+[
+    {
+        "first_introduced":"11",
+        "name": "OH_NetStack_VerifyCertification"
+    },
+    {
+        "first_introduced":"11",
+        "name": "OH_NetStack_GetPinSetForHostName"
+    },
+    {
+        "first_introduced":"11",
+        "name": "OH_NetStack_GetCertificatesForHostName"
+    },
+    {
+        "first_introduced":"11",
+        "name": "OH_Netstack_DestroyCertificatesContent"
+    },
+    {
+        "first_introduced":"16",
+        "name": "OH_Netstack_IsCleartextPermitted"
+    },
+    {
+        "first_introduced":"16",
+        "name": "OH_Netstack_IsCleartextPermittedByHostName"
+    },
+    {
+        "first_introduced": "20",
+        "name": "OH_Netstack_IsCleartextCfgByComponent"
+    }
+]

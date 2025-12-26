@@ -1,0 +1,38 @@
+[
+    {
+        "first_introduced":"20",
+        "name": "OH_Http_CreateHeaders"
+    },
+    {
+        "first_introduced":"20",
+        "name": "OH_Http_DestroyHeaders"
+    },
+    {
+        "first_introduced":"20",
+        "name": "OH_Http_SetHeaderValue"
+    },
+    {
+        "first_introduced":"20",
+        "name": "OH_Http_CreateRequest"
+    },
+    {
+       "first_introduced":"20",
+        "name": "OH_Http_Request"
+    },
+    {
+        "first_introduced":"20",
+        "name": "OH_Http_Destroy"
+    },
+    {
+        "first_introduced":"20",
+        "name": "OH_Http_GetHeaderValue"
+    },
+    {
+        "first_introduced":"20",
+        "name": "OH_Http_GetHeaderEntries"
+    },
+    {
+        "first_introduced":"20",
+        "name": "OH_Http_DestroyHeaderEntries"
+    }
+]
