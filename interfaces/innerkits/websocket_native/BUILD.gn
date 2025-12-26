@@ -1,0 +1,104 @@
+# Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//foundation/communication/netstack/netstack_config.gni")
+
+config("websocket_native_config") {
+  # header file path
+  include_dirs =
+      [ "$NETSTACK_DIR/interfaces/innerkits/websocket_native/include" ]
+
+  cflags = []
+  if (is_double_framework) {
+    cflags += [ "-DCONFIG_DUAL_FRAMEWORK" ]
+  }
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+  if (is_standard_system) {
+    cflags += [ "-DCONFIG_STANDARD_SYSTEM" ]
+  }
+  if (defined(build_public_version) && build_public_version) {
+    cflags += [ "-DBUILD_PUBLIC_VERSION" ]
+  }
+
+  if (is_mingw) {
+    defines = [ "WINDOWS_PLATFORM" ]
+  } else if (is_mac) {
+    defines = [ "MAC_PLATFORM" ]
+  }
+}
+
+ohos_shared_library("websocket_native") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  branch_protector_ret = "pac_ret"
+
+  sources = [ "$SUBSYSTEM_DIR/netstack/frameworks/native/websocket_native/src/websocket_client.cpp",
+              "$SUBSYSTEM_DIR/netstack/frameworks/native/websocket_native/src/websocket_server.cpp" ]
+
+  include_dirs = [
+    "$NETSTACK_DIR/utils/common_utils/include",
+    "$NETSTACK_DIR/utils/log/include",
+    "$NETSTACK_NATIVE_ROOT/websocket_native/include",
+  ]
+
+  cflags = [
+    "-fstack-protector-strong",
+    "-D_FORTIFY_SOURCE=2",
+    "-O2",
+  ]
+  cflags_cc = [
+    "-fstack-protector-strong",
+    "-D_FORTIFY_SOURCE=2",
+    "-O2",
+  ]
+
+  version_script = "libwebsocket_native.map"
+
+  public_configs = [ ":websocket_native_config" ]
+
+  defines = [ "OHOS_LIBWEBSOCKETS=1" ]
+
+  deps = [
+    "$NETSTACK_DIR/utils:stack_utils_common",
+    "$NETSTACK_DIR/utils/napi_utils:napi_utils",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "openssl:libcrypto_shared",
+    "openssl:libssl_shared",
+    "libwebsockets:websockets",
+  ]
+
+  if (is_mingw || is_mac) {
+    sources +=
+        [ "$NETSTACK_DIR/utils/common_utils/src/netstack_common_utils.cpp" ]
+  } else {
+    deps += [ "$NETSTACK_DIR/utils:stack_utils_common" ]
+    external_deps += [ "hilog:libhilog" ]
+    if (product_name != "ohos-sdk") {
+      external_deps += [ "init:libbegetutil" ]
+    }
+  }
+
+  innerapi_tags = [ "platformsdk" ]
+  part_name = "netstack"
+  subsystem_name = "communication"
+}
