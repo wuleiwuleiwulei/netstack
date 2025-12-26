@@ -1,0 +1,110 @@
+# Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//foundation/communication/netstack/netstack_config.gni")
+
+config("networksecurity_napi_config") {
+  include_dirs = [
+    "async_context/include",
+    "async_work/include",
+    "net_ssl_exec/include",
+    "net_ssl_module/include",
+    "$NETSTACK_DIR/frameworks/native/net_ssl/include",
+    "$NETSTACK_DIR/interfaces/innerkits/net_ssl/include",
+    "$NETSTACK_DIR/utils/common_utils/include",
+  ]
+
+  if (is_mingw || is_mac) {
+    cflags = [
+      "-std=c++17",
+      "-stdlib=libc++",
+    ]
+  }
+  if (is_mingw) {
+    defines = [ "WINDOWS_PLATFORM" ]
+  } else if (is_mac) {
+    defines = [ "MAC_PLATFORM" ]
+  }
+}
+
+ohos_shared_library("networksecurity_napi") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  branch_protector_ret = "pac_ret"
+
+  sources = [
+    "async_context/src/cert_context.cpp",
+    "async_context/src/cleartext_context.cpp",
+    "async_work/src/net_ssl_async_work.cpp",
+    "net_ssl_exec/src/net_ssl_exec.cpp",
+    "net_ssl_module/src/net_ssl_module.cpp",
+  ]
+  cflags = [
+    "-fstack-protector-strong",
+    "-D_FORTIFY_SOURCE=2",
+    "-O2",
+  ]
+  cflags_cc = [
+    "-fstack-protector-strong",
+    "-D_FORTIFY_SOURCE=2",
+    "-O2",
+  ]
+
+  configs = [ ":networksecurity_napi_config" ]
+
+  deps = []
+  if (is_mingw || is_mac) {
+    sources +=
+        [ "$NETSTACK_DIR/utils/common_utils/src/netstack_common_utils.cpp" ]
+    deps += [
+      "$NETSTACK_DIR/utils/napi_utils:napi_utils_static",
+    ]
+    external_deps += [
+      "napi:ace_napi",
+    ]
+  } else {
+    deps += [
+      "$NETSTACK_DIR/interfaces/innerkits/net_ssl:net_ssl",
+      "$NETSTACK_DIR/utils:stack_utils_common",
+      "$NETSTACK_DIR/utils/napi_utils:napi_utils",
+    ]
+    external_deps = [
+      "hilog:libhilog",
+      "napi:ace_napi",
+      "openssl:libcrypto_shared",
+      "openssl:libssl_shared",
+      "samgr:samgr_proxy",
+    ]
+  }
+  defines = []
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.communication_netmanager_base) &&
+      global_parts_info.communication_netmanager_base) {
+    external_deps += [
+      "netmanager_base:net_conn_manager_if",
+      "netmanager_base:net_security_config_if",
+    ]
+    defines += [ "HAS_NETMANAGER_BASE=1" ]
+  } else {
+    defines += [ "HAS_NETMANAGER_BASE=0" ]
+  }
+
+  relative_install_dir = "module/net"
+  part_name = "netstack"
+  subsystem_name = "communication"
+}
