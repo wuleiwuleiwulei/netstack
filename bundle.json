@@ -1,0 +1,165 @@
+{
+    "name": "@ohos/netstack",
+    "version": "4.0",
+    "description": "net stack service",
+    "publishAs": "code-segment",
+    "homePage": "https://gitee.com/openharmony",
+    "repository": "https://gitee.com/openharmony/communication_netstack",
+    "license": "Apache License 2.0",
+    "language": "",
+    "private": false,
+    "scripts": {},
+    "envs": [],
+    "dirs": [],
+    "author": {},
+    "contributors": [],
+    "segment": {
+        "destPath": "foundation/communication/netstack"
+    },
+    "component": {
+        "name": "netstack",
+        "subsystem": "communication",
+        "syscap": [
+            "SystemCapability.Communication.NetStack"
+        ],
+        "features": [
+            "netstack_feature_http3",
+            "netstack_http_boringssl",
+            "netstack_feature_communication_http3",
+            "netstack_websocket_server_enable"
+        ],
+        "adapted_system_type": [
+            "standard"
+        ],
+        "rom": "3MB",
+        "ram": "5MB",
+        "deps": {
+            "components": [
+                "ability_base",
+                "bounds_checking_function",
+                "curl",
+                "ffrt",
+                "hilog",
+                "hitrace",
+                "hisysevent",
+                "ipc",
+                "zlib",
+                "cJSON",
+                "c_utils",
+                "init",
+                "napi",
+                "netmanager_base",
+                "ylong_http",
+                "openssl",
+                "hiprofiler",
+                "time_service",
+                "ability_runtime",
+                "samgr",
+                "libwebsockets",
+                "node",
+                "jsoncpp",
+                "access_token",
+                "hiappevent",
+                "bundle_framework",
+                "safwk",
+                "runtime_core",
+                "rust_cxx"
+            ]
+        },
+        "build": {
+            "group_type": {
+                "base_group": [
+                    "//foundation/communication/netstack/frameworks/ets/ani:ani_package",
+                    "//foundation/communication/netstack/frameworks/js/napi/http:http",
+                    "//foundation/communication/netstack/frameworks/js/napi/socket:socket",
+                    "//foundation/communication/netstack/frameworks/js/napi/websocket:websocket",
+                    "//foundation/communication/netstack/frameworks/js/napi/net_ssl:networksecurity_napi",
+                    "//foundation/communication/netstack/interfaces/kits/c/net_websocket:net_websocket",
+                    "//foundation/communication/netstack/interfaces/kits/c/net_ssl:net_ssl_ndk",
+                    "//foundation/communication/netstack/frameworks/js/napi/fetch:fetch",
+                    "//foundation/communication/netstack/utils:common_utils",
+                    "//foundation/communication/netstack/interfaces/kits/c/net_http:net_http_ndk"
+                ],
+                "fwk_group": [],
+                "service_group": []
+            },
+            "inner_kits": [
+                {
+                    "type": "so",
+                    "name": "//foundation/communication/netstack/interfaces/innerkits/http_client:http_client",
+                    "header": {
+                        "header_files": [
+                            "http_client.h",
+                            "http_client_constant.h",
+                            "http_client_request.h",
+                            "http_client_response.h",
+                            "http_client_error.h",
+                            "http_client_task.h"
+                        ],
+                        "header_base": "//foundation/communication/netstack/interfaces/innerkits/http_client/include"
+                    }
+                },
+                {
+                    "type": "so",
+                    "name": "//foundation/communication/netstack/interfaces/innerkits/net_ssl:net_ssl",
+                    "header": {
+                        "header_files": [
+                            "net_ssl_type.h",
+                            "net_ssl.h"
+                        ],
+                        "header_base": "//foundation/communication/netstack/interfaces/innerkits/net_ssl/include"
+                    }
+                },
+                {
+                    "type": "so",
+                    "name": "//foundation/communication/netstack/interfaces/innerkits/websocket_native:websocket_native",
+                    "header": {
+                        "header_files": [
+                            "websocket_client_innerapi.h",
+                            "websocket_server_innerapi.h"
+                        ],
+                        "header_base": "//foundation/communication/netstack/interfaces/innerkits/websocket_native/include"
+                    }
+                },
+                {
+                    "header": {
+                        "header_base": [],
+                        "header_files": []
+                    },
+                    "name": "//foundation/communication/netstack/interfaces/innerkits/rust/ylong_http_client:ylong_http_client"
+                },
+                {
+                    "header": {
+                        "header_base": "//foundation/communication/netstack/frameworks/cj/websocket/include",
+                        "header_files": []
+                    },
+                    "name": "//foundation/communication/netstack/frameworks/cj/websocket:cj_net_websocket_ffi"
+                },
+                {
+                    "header": {
+                        "header_base": "//foundation/communication/netstack/frameworks/cj/http/include",
+                        "header_files": []
+                    },
+                    "name": "//foundation/communication/netstack/frameworks/cj/http:cj_net_http_ffi"
+                },
+                {
+                    "header": {
+                        "header_base": "//foundation/communication/netstack/frameworks/cj/network_security/include",
+                        "header_files": []
+                    },
+                    "name": "//foundation/communication/netstack/frameworks/cj/network_security:cj_net_network_security_ffi"
+                },
+                {
+                    "header": {
+                        "header_base": [],
+                        "header_files": []
+                    },
+                    "name": "//foundation/communication/netstack/interfaces/innerkits/rust/netstack_rs:netstack_rs"
+                }
+            ],
+            "test": [
+                "//foundation/communication/netstack/test:netstack_test"
+            ]
+        }
+    }
+}
