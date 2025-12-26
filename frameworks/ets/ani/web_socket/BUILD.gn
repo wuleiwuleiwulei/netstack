@@ -1,0 +1,101 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/components/ets_frontend/ets2abc_config.gni")
+import("//foundation/communication/netstack/netstack_config.gni")
+import("//build/ohos.gni")
+
+rust_cxx("websocket_ani_cxx") {
+  sources = [ "src/wrapper.rs" ]
+}
+
+ohos_static_library("websocket_ani_static") {
+  sanitize = {
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  include_dirs = [
+    "include",
+    "${target_gen_dir}/src",
+    "$NETSTACK_DIR/utils/common_utils/include",
+    "$NETSTACK_DIR/utils/log/include",
+    "$NETSTACK_NATIVE_ROOT/websocket_native/include",
+  ]
+  sources = [ "src/cxx/websocket_ani.cpp" ]
+  sources += get_target_outputs(":websocket_ani_cxx")
+  
+  deps = [
+    ":websocket_ani_cxx",
+    "$NETSTACK_DIR/utils/napi_utils:napi_utils",
+    "$NETSTACK_INNERKITS_DIR/websocket_native:websocket_native"
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "netmanager_base:net_conn_manager_if",
+    "rust_cxx:cxx_cppdeps",
+    "libwebsockets:websockets",
+  ]
+
+  part_name = "netstack"
+  subsystem_name = "communication"
+}
+
+ohos_rust_shared_library("websocket_ani") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    all_ubsan = true
+    debug = false
+  }
+
+  sources = [ "src/lib.rs" ]
+  
+  external_deps = [
+    "runtime_core:ani",
+    "hilog:hilog_rust",
+    "netmanager_base:ani_rs",
+    "rust_cxx:lib"
+  ]
+  deps = [
+    "../common:netstack_common",
+    ":websocket_ani_static",
+    "//third_party/rust/crates/serde/serde:lib"
+  ]
+  clippy_lints = "none"
+  part_name = "netstack"
+  subsystem_name = "communication"
+  output_extension = "so"
+}
+
+generate_static_abc("websocket") {
+  base_url = "./ets"
+  files = [ "ets/@ohos.net.webSocket.ets" ]
+  is_boot_abc = "True"
+  device_dst_file = "/system/framework/websocket.abc"
+}
+
+ohos_prebuilt_etc("websocket_etc") {
+  source = "$target_out_dir/websocket.abc"
+  module_install_dir = "framework"
+  part_name = "netstack"
+  subsystem_name = "communication"
+  deps = [ ":websocket" ]
+}
